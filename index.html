@@ -216,16 +216,14 @@
           <span class="row-see-all" onclick="showToast('Full browse coming soon!')">See all</span>
         </div>
         <div class="row-scroll-wrapper">
-          <button class="row-arrow left"  onclick="scrollRow('${rowId}', -1)" aria-label="Scroll left">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          </button>
-          <div class="row-viewport">
-            <div class="row-scroller" id="${rowId}">
-              ${Array(10).fill(0).map(() => `<div class="skeleton"></div>`).join('')}
-            </div>
+          <div class="row-scroller" id="${rowId}">
+            ${Array(10).fill(0).map(() => `<div class="skeleton"></div>`).join('')}
           </div>
+          <button class="row-arrow left"  onclick="scrollRow('${rowId}', -1)" aria-label="Scroll left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
           <button class="row-arrow right" onclick="scrollRow('${rowId}', 1)" aria-label="Scroll right">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
       </div>

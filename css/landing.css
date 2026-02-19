@@ -338,63 +338,71 @@ body.landing-page {
     color: var(--red);
 }
 
-/* Scrollable row container */
+/* Scrollable row container — position:relative so arrows anchor to it */
 .row-scroll-wrapper {
-    display: flex;
-    align-items: center;
-}
-
-/* ---- invisible clip window ---- */
-.row-viewport {
-    flex: 1;
-    min-width: 0;
+    position: relative;
     overflow: hidden;
+    /* clips the scroller at the wrapper's right edge */
 }
 
+/* The actual scrollable strip of cards */
 .row-scroller {
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    padding: 8px 4px 16px;
+    /* cards scroll inside here */
+    padding: 8px 52px 16px;
+    /* 52px left/right padding so first/last card clears the arrow */
     scroll-behavior: smooth;
     scrollbar-width: none;
+    box-sizing: border-box;
+    width: 100%;
+    /* must match wrapper width so overflow-x:auto kicks in */
 }
 
 .row-scroller::-webkit-scrollbar {
     display: none;
 }
 
-/* Scroll arrows */
+/* ── Arrows: OVERLAID on the scroller, anchored to wrapper edges ── */
 .row-arrow {
-    flex-shrink: 0;
-    width: 44px;
-    height: 80px;
-    border-radius: 6px;
-    background: rgba(10, 10, 10, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    position: absolute;
+    /* relative to .row-scroll-wrapper */
+    top: 0;
+    bottom: 0;
+    width: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 5;
-    transition: background var(--transition), opacity var(--transition), transform var(--transition);
-    opacity: 0.45;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    margin: 0 4px;
-    align-self: center;
+    border: none;
+    color: #fff;
+    z-index: 10;
+    opacity: 0.6;
+    transition: opacity var(--transition), background var(--transition);
 }
 
 .row-scroll-wrapper:hover .row-arrow {
     opacity: 1;
 }
 
-.row-arrow:hover {
-    background: var(--red);
-    border-color: var(--red);
-    transform: scale(1.05);
+.row-arrow.left {
+    left: 0;
+    background: linear-gradient(to right, rgba(10, 10, 10, 0.95) 40%, transparent 100%);
 }
 
+.row-arrow.right {
+    right: 0;
+    background: linear-gradient(to left, rgba(10, 10, 10, 0.95) 40%, transparent 100%);
+}
+
+.row-arrow.left:hover {
+    background: linear-gradient(to right, rgba(229, 9, 20, 0.6) 30%, transparent 100%);
+}
+
+.row-arrow.right:hover {
+    background: linear-gradient(to left, rgba(229, 9, 20, 0.6) 30%, transparent 100%);
+}
 
 
 /* === Movie Card === */
