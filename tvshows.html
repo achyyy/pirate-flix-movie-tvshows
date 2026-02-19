@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PirateFlix — TV Shows</title>
+    <meta name="description" content="PirateFlix — Browse all TV shows and series by category." />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/landing.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+</head>
+
+<body class="landing-page">
+
+    <!-- ============ SIDEBAR ============ -->
+    <nav class="sidebar" aria-label="Main Navigation">
+        <div class="sidebar-logo">PirateFlix</div>
+        <div class="sidebar-icon" title="Search" id="sb-search"><i data-feather="search"></i></div>
+        <div class="sidebar-icon" title="Home" id="sb-home"><i data-feather="home"></i></div>
+        <div class="sidebar-icon" title="Movies" id="sb-movies"><i data-feather="film"></i></div>
+        <div class="sidebar-icon active" title="Series" id="sb-series"><i data-feather="monitor"></i></div>
+        <div class="sidebar-icon" title="Trending" id="sb-trending"><i data-feather="trending-up"></i></div>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-icon" title="Add to List" id="sb-add"><i data-feather="plus"></i></div>
+        <div class="sidebar-icon" title="Shuffle" id="sb-shuffle"><i data-feather="shuffle"></i></div>
+    </nav>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main-content">
+
+        <!-- === HERO === -->
+        <section class="hero" id="heroSection">
+            <div class="hero-backdrop" id="heroBg"></div>
+            <div class="hero-overlay"></div>
+            <div class="top-nav">
+                <div class="user-avatar">
+                    <div class="avatar-circle" id="avatarInitial">P</div>
+                    <span class="avatar-name" id="avatarName">Pirate</span>
+                </div>
+                <button class="btn-logout" id="logoutBtn">Sign out</button>
+            </div>
+            <div class="hero-content" id="heroContent">
+                <div
+                    style="width:80px;height:20px;background:rgba(255,255,255,0.08);border-radius:6px;margin-bottom:12px;animation:shimmer 1.4s infinite;background-size:200% 100%;">
+                </div>
+                <div
+                    style="width:60%;height:56px;background:rgba(255,255,255,0.08);border-radius:8px;margin-bottom:14px;animation:shimmer 1.4s infinite;background-size:200% 100%;">
+                </div>
+                <div
+                    style="width:40%;height:16px;background:rgba(255,255,255,0.06);border-radius:4px;margin-bottom:24px;animation:shimmer 1.4s infinite;background-size:200% 100%;">
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <div
+                        style="width:120px;height:44px;background:rgba(229,9,20,0.3);border-radius:50px;animation:shimmer 1.4s infinite;background-size:200% 100%;">
+                    </div>
+                    <div
+                        style="width:140px;height:44px;background:rgba(255,255,255,0.06);border-radius:50px;animation:shimmer 1.4s infinite;background-size:200% 100%;">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- === TV ROWS === -->
+        <section class="movies-section" id="moviesSection"></section>
+    </main>
+
+    <!-- === MODAL === -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal">
+            <button class="modal-close" id="modalClose" aria-label="Close"><i data-feather="x"></i></button>
+            <img src="" alt="" class="modal-poster" id="modalPoster" />
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-meta" id="modalMeta"></div>
+            <div class="modal-overview" id="modalOverview"></div>
+        </div>
+    </div>
+
+    <!-- === TOAST === -->
+    <div class="toast" id="toast" aria-live="polite"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/tmdb.js"></script>
+    <script>
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        /* ---- Auth Guard ---- */
+        (async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            const stored = sessionStorage.getItem('pf_user');
+            const user = stored ? JSON.parse(stored) : null;
+            const name = user?.username || session.user.email.split('@')[0];
+            document.getElementById('avatarName').textContent = name;
+            document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+            feather.replace();
+            loadAll();
+        })();
+
+        /* ---- Logout ---- */
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await _supabase.auth.signOut();
+            sessionStorage.removeItem('pf_user');
+            window.location.href = 'login.html';
+        });
+
+        /* ---- Sidebar navigation ---- */
+        document.querySelectorAll('.sidebar-icon').forEach(icon => {
+            icon.addEventListener('click', function () {
+                document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        document.getElementById('sb-home').addEventListener('click', () => window.location.href = 'index.html');
+        document.getElementById('sb-movies').addEventListener('click', () => window.location.href = 'movies.html');
+
+        /* ---- Toast ---- */
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        /* ---- Hero ---- */
+        let heroItems = [], heroIdx = 0;
+
+        function renderHero(item) {
+            const backdrop = item.backdrop_path ? TMDB.backdrop(item.backdrop_path) : '';
+            const title = item.name || item.title || 'Unknown';
+            const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+            const year = (item.first_air_date || '').slice(0, 4);
+            const overview = item.overview || '';
+            document.getElementById('heroBg').style.backgroundImage = backdrop ? `url('${backdrop}')` : '';
+            document.getElementById('heroContent').innerHTML = `
+                <div class="hero-badge">Series</div>
+                <h2 class="hero-title">${title}</h2>
+                <div class="hero-meta">
+                    <div class="imdb-badge">IMDb ${rating}</div>
+                    <span class="hero-streams">📺 Popular Now</span>
+                    ${year ? `<span class="hero-year">${year}</span>` : ''}
+                </div>
+                <p class="hero-overview">${overview}</p>
+                <div class="hero-buttons">
+                    <button class="btn-play" onclick="showToast('🏴‍☠️ Arrr! Streaming not available in demo mode.')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        Play
+                    </button>
+                    <button class="btn-trailer" onclick="openModal(${item.id}, 'tv')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+                        More Info
+                    </button>
+                </div>
+            `;
+            feather.replace();
+        }
+
+        function cycleHero() {
+            if (!heroItems.length) return;
+            heroIdx = (heroIdx + 1) % Math.min(heroItems.length, 8);
+            renderHero(heroItems[heroIdx]);
+        }
+
+        /* ---- Row Builder ---- */
+        function buildRow(title, items, mediaType) {
+            const section = document.getElementById('moviesSection');
+            const rowId = 'row_' + Math.random().toString(36).slice(2, 8);
+            section.insertAdjacentHTML('beforeend', `
+                <div class="movie-row">
+                    <div class="row-header">
+                        <h3 class="row-title">${title}</h3>
+                        <span class="row-see-all" onclick="showToast('Full browse coming soon!')">See all</span>
+                    </div>
+                    <div class="row-scroll-wrapper">
+                        <button class="row-arrow left" onclick="scrollRow('${rowId}', -1)" aria-label="Scroll left">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <div class="row-scroller" id="${rowId}">
+                            ${Array(10).fill(0).map(() => `<div class="skeleton"></div>`).join('')}
+                        </div>
+                        <button class="row-arrow right" onclick="scrollRow('${rowId}', 1)" aria-label="Scroll right">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+            `);
+            if (items && items.length) {
+                const scroller = document.getElementById(rowId);
+                scroller.innerHTML = items.slice(0, 10).map(item => {
+                    const mt = mediaType || 'tv';
+                    const t = item.name || item.title || 'Unknown';
+                    const poster = TMDB.poster(item.poster_path);
+                    const r = item.vote_average ? item.vote_average.toFixed(1) : '';
+                    return `
+                        <div class="movie-card" onclick="openModal(${item.id}, '${mt}')" title="${t}">
+                            <img src="${poster}" alt="${t}" loading="lazy"
+                                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;160&quot; height=&quot;240&quot; viewBox=&quot;0 0 160 240&quot;%3E%3Crect width=&quot;160&quot; height=&quot;240&quot; fill=&quot;%23111&quot;/%3E%3Ctext x=&quot;50%25&quot; y=&quot;50%25&quot; text-anchor=&quot;middle&quot; fill=&quot;%23444&quot; font-size=&quot;12&quot; dy=&quot;.3em&quot;%3ENo Image%3C/text%3E%3C/svg%3E'"/>
+                            <div class="card-type-badge">Series</div>
+                            <div class="card-overlay">
+                                <div class="card-title">${t}</div>
+                                ${r ? `<div class="card-rating">⭐ ${r}</div>` : ''}
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+            return rowId;
+        }
+
+        /* ---- Scroll ---- */
+        function scrollRow(rowId, direction) {
+            const el = document.getElementById(rowId);
+            if (el) el.scrollBy({ left: direction * 500, behavior: 'smooth' });
+        }
+
+        /* ---- Modal ---- */
+        async function openModal(id, mediaType) {
+            document.getElementById('modalOverlay').classList.add('open');
+            document.getElementById('modalTitle').textContent = 'Loading…';
+            document.getElementById('modalMeta').textContent = '';
+            document.getElementById('modalOverview').textContent = '';
+            document.getElementById('modalPoster').src = '';
+            try {
+                const data = mediaType === 'tv' ? await TMDB.tvDetails(id) : await TMDB.movieDetails(id);
+                const title = data.name || data.title || 'Unknown';
+                const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
+                const year = (data.first_air_date || data.release_date || '').slice(0, 4);
+                const runtime = data.episode_run_time?.[0] ? `${data.episode_run_time[0]} min/ep` : (data.number_of_seasons ? `${data.number_of_seasons} Season${data.number_of_seasons > 1 ? 's' : ''}` : '');
+                const genres = (data.genres || []).slice(0, 3).map(g => g.name).join(' · ');
+                document.getElementById('modalPoster').src = TMDB.backdrop(data.backdrop_path, 'w780') || TMDB.poster(data.poster_path, 'w500');
+                document.getElementById('modalPoster').alt = title;
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMeta').textContent = [year, runtime, genres, `⭐ ${rating}`].filter(Boolean).join(' · ');
+                document.getElementById('modalOverview').textContent = data.overview || 'No description available.';
+            } catch { document.getElementById('modalTitle').textContent = 'Failed to load details.'; }
+            feather.replace();
+        }
+        document.getElementById('modalClose').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('open'));
+        document.getElementById('modalOverlay').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+
+        /* ---- Load TV Shows ---- */
+        async function loadAll() {
+            try {
+                const [popular, trending, topRated, airingToday, onAir, drama, comedy, crime, scifi, action, mystery, reality] = await Promise.all([
+                    tmdbFetch('/tv/popular'),
+                    tmdbFetch('/trending/tv/week'),
+                    tmdbFetch('/tv/top_rated'),
+                    tmdbFetch('/tv/airing_today'),
+                    tmdbFetch('/tv/on_the_air'),
+                    tmdbFetch('/discover/tv', { with_genres: '18', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '35', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '80', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '10765', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '10759', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '9648', sort_by: 'popularity.desc' }),
+                    tmdbFetch('/discover/tv', { with_genres: '10764', sort_by: 'popularity.desc' }),
+                ]);
+
+                heroItems = popular.results || [];
+                if (heroItems.length) { renderHero(heroItems[0]); setInterval(cycleHero, 8000); }
+
+                buildRow('🔥 Trending TV This Week', trending.results, 'tv');
+                buildRow('📺 Popular Right Now', popular.results, 'tv');
+                buildRow('📡 Airing Today', airingToday.results, 'tv');
+                buildRow('🗓️ Currently On Air', onAir.results, 'tv');
+                buildRow('⭐ Top Rated Series', topRated.results, 'tv');
+                buildRow('🎭 Drama', drama.results, 'tv');
+                buildRow('😂 Comedy', comedy.results, 'tv');
+                buildRow('🔪 Crime', crime.results, 'tv');
+                buildRow('🚀 Sci-Fi & Fantasy', scifi.results, 'tv');
+                buildRow('💥 Action & Adventure', action.results, 'tv');
+                buildRow('🔍 Mystery', mystery.results, 'tv');
+                buildRow('🎤 Reality TV', reality.results, 'tv');
+            } catch (err) {
+                console.error(err);
+                showToast('⚠️ Could not load TV shows. Check your connection.');
+            }
+        }
+    </script>
+</body>
+
+</html>

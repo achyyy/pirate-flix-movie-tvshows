@@ -372,7 +372,7 @@ body.landing-page {
     cursor: pointer;
     z-index: 5;
     transition: background var(--transition), opacity var(--transition), transform var(--transition);
-    opacity: 0;
+    opacity: 0.35;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
