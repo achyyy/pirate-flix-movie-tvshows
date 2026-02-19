@@ -7,7 +7,6 @@ body.landing-page {
     display: flex;
     min-height: 100vh;
     background: #0a0a0a;
-    overflow-x: hidden;
 }
 
 /* === Sidebar === */
