@@ -80,6 +80,12 @@ body.landing-page {
 .main-content {
     margin-left: var(--sidebar-width);
     flex: 1;
+    min-width: 0;
+    /* allows flex item to shrink below content size */
+    width: calc(100% - var(--sidebar-width));
+    /* explicit constraint */
+    overflow-x: hidden;
+    /* prevents horizontal scroll on the main area itself */
     min-height: 100vh;
 }
 
