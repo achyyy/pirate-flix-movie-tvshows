@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PirateFlix — Sign In</title>
+    <meta name="description" content="Sign in to PirateFlix — Your gateway to unlimited entertainment." />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/auth.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+</head>
+
+<body class="auth-page">
+
+    <div class="auth-bg">
+        <div class="auth-bg-grid"></div>
+    </div>
+
+    <div class="auth-card" role="main">
+
+        <div class="auth-logo">
+            <div class="logo-text">PirateFlix</div>
+            <div class="logo-sub">Unlimited Entertainment</div>
+        </div>
+
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Sign in to your account</p>
+
+        <div class="auth-error" id="errorMsg" role="alert"></div>
+        <div class="auth-success" id="successMsg" role="status"></div>
+
+        <form class="auth-form" id="loginForm" novalidate>
+
+            <!-- Email -->
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <div class="input-wrap">
+                    <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email"
+                        required />
+                    <span class="input-icon" data-feather="mail"></span>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" class="form-input" placeholder="Your password"
+                        autocomplete="current-password" required />
+                    <span class="input-icon" data-feather="lock"></span>
+                    <button type="button" class="eye-toggle" id="togglePwd" aria-label="Toggle password visibility">
+                        <i data-feather="eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-auth" id="submitBtn">
+                Sign In
+            </button>
+
+        </form>
+
+        <div class="auth-divider"><span>or</span></div>
+
+        <div class="auth-footer">
+            New to PirateFlix? <a href="register.html">Create account</a>
+        </div>
+
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        feather.replace();
+
+        // ---- Eye Toggle ----
+        const pwdInput = document.getElementById('password');
+        document.getElementById('togglePwd').addEventListener('click', function () {
+            const isText = pwdInput.type === 'text';
+            pwdInput.type = isText ? 'password' : 'text';
+            this.innerHTML = isText
+                ? '<i data-feather="eye"></i>'
+                : '<i data-feather="eye-off"></i>';
+            feather.replace();
+        });
+
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+            successMsg.classList.remove('visible');
+        }
+        function showSuccess(msg) {
+            successMsg.textContent = msg;
+            successMsg.classList.add('visible');
+            errorMsg.classList.remove('visible');
+        }
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.innerHTML = loading
+                ? '<span class="spinner"></span> Signing in…'
+                : 'Sign In';
+        }
+
+        // Auto-redirect if already logged in
+        (async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) window.location.href = 'index.html';
+        })();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.classList.remove('visible');
+            successMsg.classList.remove('visible');
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email) return showError('Please enter your email address.');
+            if (!password) return showError('Please enter your password.');
+
+            setLoading(true);
+
+            try {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+                if (error) throw error;
+
+                // Fetch username from profiles
+                const { data: profile } = await _supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', data.user.id)
+                    .single();
+
+                // Store session info for landing page
+                sessionStorage.setItem('pf_user', JSON.stringify({
+                    id: data.user.id,
+                    email: data.user.email,
+                    username: profile?.username || data.user.email.split('@')[0]
+                }));
+
+                showSuccess(`Welcome back, ${profile?.username || 'Pirate'}! 🏴‍☠️`);
+                setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+
+            } catch (err) {
+                console.error(err);
+                if (err.message?.toLowerCase().includes('invalid login')) {
+                    showError('Incorrect email or password. Please try again.');
+                } else if (err.message?.toLowerCase().includes('email not confirmed')) {
+                    showError('Please confirm your email before logging in. Check your inbox.');
+                } else {
+                    showError(err.message || 'Sign in failed. Please try again.');
+                }
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+
+</html>

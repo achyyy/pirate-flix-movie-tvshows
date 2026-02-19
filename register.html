@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PirateFlix — Create Account</title>
+  <meta name="description" content="Join PirateFlix — Create your account to access thousands of movies and shows." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="auth-page">
+
+  <!-- Animated background -->
+  <div class="auth-bg">
+    <div class="auth-bg-grid"></div>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-card" role="main">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-text">PirateFlix</div>
+      <div class="logo-sub">Unlimited Entertainment</div>
+    </div>
+
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">Start your free membership today</p>
+
+    <!-- Error / Success -->
+    <div class="auth-error" id="errorMsg" role="alert"></div>
+    <div class="auth-success" id="successMsg" role="status"></div>
+
+    <form class="auth-form" id="registerForm" novalidate>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <input
+            type="text"
+            id="username"
+            class="form-input"
+            placeholder="coolpirateuser"
+            autocomplete="username"
+            required
+          />
+          <span class="input-icon" data-feather="user"></span>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <div class="input-wrap">
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+          <span class="input-icon" data-feather="mail"></span>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="Min. 8 characters"
+            autocomplete="new-password"
+            required
+          />
+          <span class="input-icon" data-feather="lock"></span>
+          <button type="button" class="eye-toggle" id="togglePwd" aria-label="Toggle password visibility">
+            <i data-feather="eye"></i>
+          </button>
+        </div>
+        <div class="pwd-strength" id="pwdStrength">
+          <div class="bar" id="bar1"></div>
+          <div class="bar" id="bar2"></div>
+          <div class="bar" id="bar3"></div>
+          <div class="bar" id="bar4"></div>
+        </div>
+        <div class="pwd-label" id="pwdLabel"></div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="input-wrap">
+          <input
+            type="password"
+            id="confirmPassword"
+            class="form-input"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            required
+          />
+          <span class="input-icon" data-feather="shield"></span>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-auth" id="submitBtn">
+        Create Account
+      </button>
+
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="login.html">Sign in</a>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script>
+    // Initialize Supabase
+    const { createClient } = supabase;
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Init icons
+    feather.replace();
+
+    // ---- Password strength ----
+    const pwdInput = document.getElementById('password');
+    const bars = [document.getElementById('bar1'), document.getElementById('bar2'),
+                  document.getElementById('bar3'), document.getElementById('bar4')];
+    const pwdLabel = document.getElementById('pwdLabel');
+
+    function checkStrength(val) {
+      let score = 0;
+      if (val.length >= 8)  score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      return score;
+    }
+
+    pwdInput.addEventListener('input', () => {
+      const score = checkStrength(pwdInput.value);
+      const classes = ['', 'weak', 'medium', 'medium', 'strong'];
+      const labels  = ['', 'Weak', 'Fair', 'Good', 'Strong 💪'];
+      bars.forEach((b, i) => {
+        b.className = 'bar';
+        if (i < score) b.classList.add(classes[score]);
+      });
+      pwdLabel.textContent = pwdInput.value ? labels[score] : '';
+    });
+
+    // ---- Eye toggle ----
+    document.getElementById('togglePwd').addEventListener('click', function() {
+      const isText = pwdInput.type === 'text';
+      pwdInput.type = isText ? 'password' : 'text';
+      this.innerHTML = isText
+        ? '<i data-feather="eye"></i>'
+        : '<i data-feather="eye-off"></i>';
+      feather.replace();
+    });
+
+    // ---- Register ----
+    const form       = document.getElementById('registerForm');
+    const submitBtn  = document.getElementById('submitBtn');
+    const errorMsg   = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('visible');
+      successMsg.classList.remove('visible');
+    }
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.classList.add('visible');
+      errorMsg.classList.remove('visible');
+    }
+    function clearMessages() {
+      errorMsg.classList.remove('visible');
+      successMsg.classList.remove('visible');
+    }
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      submitBtn.innerHTML = loading
+        ? '<span class="spinner"></span> Creating Account…'
+        : 'Create Account';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+
+      const username = document.getElementById('username').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirm  = document.getElementById('confirmPassword').value;
+
+      // Client-side validation
+      if (!username || username.length < 3) {
+        return showError('Username must be at least 3 characters.');
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        return showError('Username can only contain letters, numbers, and underscores.');
+      }
+      if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        return showError('Please enter a valid email address.');
+      }
+      if (password.length < 8) {
+        return showError('Password must be at least 8 characters.');
+      }
+      if (password !== confirm) {
+        return showError('Passwords do not match.');
+      }
+
+      setLoading(true);
+
+      try {
+        // 1. Sign up with Supabase Auth
+        const { data, error } = await _supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username }   // stored in auth.users.raw_user_meta_data
+          }
+        });
+
+        if (error) throw error;
+
+        // 2. Insert into profiles table
+        if (data.user) {
+          const { error: profileError } = await _supabase
+            .from('profiles')
+            .insert({ id: data.user.id, username });
+
+          // If profile already exists (duplicate username), handle gracefully
+          if (profileError && profileError.code !== '23505') {
+            throw profileError;
+          }
+        }
+
+        showSuccess('✅ Account created! Redirecting to login…');
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
+      } catch (err) {
+        console.error(err);
+        if (err.message?.includes('already registered')) {
+          showError('An account with this email already exists. Please log in.');
+        } else if (err.code === '23505') {
+          showError('Username already taken. Please choose another.');
+        } else {
+          showError(err.message || 'Registration failed. Please try again.');
+        }
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>

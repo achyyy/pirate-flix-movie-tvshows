@@ -1,0 +1,19 @@
+# Byte-compiled files
+*.pyc
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Local env files (if any)
+.env
+.env.local
+
+# Node (just in case)
+node_modules/
