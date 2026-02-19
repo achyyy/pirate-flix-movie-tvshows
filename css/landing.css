@@ -188,6 +188,7 @@ body.landing-page {
     margin-bottom: 24px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -316,7 +317,7 @@ body.landing-page {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 40px 16px;
+    padding: 0 52px 16px;
 }
 
 .row-title {
@@ -339,16 +340,20 @@ body.landing-page {
 
 /* Scrollable row container */
 .row-scroll-wrapper {
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
 }
 
 .row-scroller {
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    padding: 0 40px 12px;
+    padding: 8px 12px 16px;
     scroll-behavior: smooth;
     scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
 }
 
 .row-scroller::-webkit-scrollbar {
@@ -357,14 +362,12 @@ body.landing-page {
 
 /* Scroll arrows */
 .row-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    flex-shrink: 0;
     width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(10, 10, 10, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    height: 80px;
+    border-radius: 6px;
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
     display: flex;
     align-items: center;
@@ -372,8 +375,10 @@ body.landing-page {
     cursor: pointer;
     z-index: 5;
     transition: background var(--transition), opacity var(--transition), transform var(--transition);
-    opacity: 0.35;
+    opacity: 0.45;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    margin: 0 4px;
+    align-self: center;
 }
 
 .row-scroll-wrapper:hover .row-arrow {
@@ -383,16 +388,10 @@ body.landing-page {
 .row-arrow:hover {
     background: var(--red);
     border-color: var(--red);
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.05);
 }
 
-.row-arrow.left {
-    left: 8px;
-}
 
-.row-arrow.right {
-    right: 8px;
-}
 
 /* === Movie Card === */
 .movie-card {

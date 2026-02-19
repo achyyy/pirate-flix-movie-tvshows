@@ -233,7 +233,7 @@
             // Fill with actual items
             if (items && items.length) {
                 const scroller = document.getElementById(rowId);
-                scroller.innerHTML = items.slice(0, 10).map(item => {
+                scroller.innerHTML = items.slice(0, 20).map(item => {
                     const mt = item.media_type || mediaType || 'movie';
                     const title = item.title || item.name || 'Unknown';
                     const poster = TMDB.poster(item.poster_path);
